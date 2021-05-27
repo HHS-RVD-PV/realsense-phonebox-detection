@@ -19,11 +19,12 @@ k = 0
 i=0
 pipeline=rs.pipeline()
 config=rs.config()
-cx =0
-cy= 0
+cx=320 
+cy=240
 config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
 config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 # config.enable_stream(rs.stream.infrared, 640, 480, rs.format.y8, 15)
+size = []
 
 cfg = pipeline.start(config)
 dev = cfg.get_device()
@@ -69,6 +70,7 @@ try:
         ResultY = []
         ResetY = 0
         Packages = []
+        Coordinates = []
     
         lower = cv2.getTrackbarPos("lower", "canny")
         upper = cv2.getTrackbarPos("upper", "canny")
@@ -160,19 +162,19 @@ try:
                 a,b,c = lines.shape
                 for i in range(a):
                     AVert = math.degrees(math.atan(abs((lines[i,0,1]-lines[i,0,3])/(lines[i,0,0]-lines[i,0,2]))))
-                    if (AVert < 10):
+                    if (AVert < 5):
                         cv2.line(bg_removed, (lines[i][0][0], lines[i][0][1]), (lines[i][0][2], lines[i][0][3]), (0, 0, 255), 1, cv2.LINE_AA)
                         Hlines.append(lines[i][0][1])
                   
                     AVert = math.degrees(math.atan(abs((lines[i,0,0]-lines[i,0,2])/(lines[i,0,1]-lines[i,0,3]))))
-                    if (AVert < 10):
+                    if (AVert < 5):
                         cv2.line(bg_removed, (lines[i][0][0], lines[i][0][1]), (lines[i][0][2], lines[i][0][3]), (0, 0, 255), 1, cv2.LINE_AA)
                         Vlines.append(lines[i][0][0])
         Hlines.sort()
         Vlines.sort()
         while (len(Hlines) >= 60) and (ResetX != 2):          # 3 = aantal keer dat de eigenschap terugkomt
             for T in range(len(Hlines)):
-                if Hlines[T] <= (Hlines[0] + 15):              # threshold waarbinnen de feature moet vallen
+                if Hlines[T] <= (Hlines[0] + 20):              # threshold waarbinnen de feature moet vallen
                     MedianX.append(Hlines[T])
                 else:
                     if (len(MedianX)) >= 60:                # 3 = aantal keer dat de eigenschap terugkomt
@@ -194,7 +196,7 @@ try:
         
         while (len(Vlines) >= 60) and (ResetY != 2):          # 3 = aantal keer dat de eigenschap terugkomt
             for T in range(len(Vlines)):
-                if Vlines[T] <= (Vlines[0] + 15):              # threshold waarbinnen de feature moet vallen
+                if Vlines[T] <= (Vlines[0] + 20):              # threshold waarbinnen de feature moet vallen
                     MedianY.append(Vlines[T])
                 else:
                     if (len(MedianY)) >= 60:                # 3 = aantal keer dat de eigenschap terugkomt
@@ -216,6 +218,7 @@ try:
         PackCoordX = np.zeros((len(ResultX)-1))
         PackCoordY = np.zeros((len(ResultY)-1))
         
+        
         if (len(ResultX) > 1) and (len(ResultY) > 1):
             for X in range(len(ResultX)-1):
                 PackCoordX[X] = (ResultX[X+1] - ResultX[X])/2  + ResultX[X]
@@ -223,13 +226,33 @@ try:
                 PackCoordY[Y] = (ResultY[Y+1] - ResultY[Y])/2  + ResultY[Y]
             # print(PackCoordY)
             # print(PackCoordX)
+        PackageColors = []
+        
         for X in range(len(ResultX)-1):
-            
             for Y in range(len(ResultY)-1):
-                Packages.append([PackCoordX[X],PackCoordY[Y]])
-                # print(X)
-                cv2.circle(bg_removed, (round(PackCoordY[Y]), round(PackCoordX[X])), 3, (0, 0, 0), -1)
+                cropimage = bg_removed[round(ResultX[X]):round(ResultX[X+1]),round(ResultY[Y]):round(ResultY[Y+1])]
+                V = cropimage.T[0].flatten().mean()
+                PackageColors.append(V)
+                if V < 180:
+                    Packages.append([PackCoordY[Y],PackCoordX[X]])
+                    # print(X)
+                    cv2.circle(bg_removed, (round(PackCoordY[Y]), round(PackCoordX[X])), 10, (0, 255, 0), -1)
+        
 
+    
+        dist = depth_frame.get_distance(cx, cy)
+        for I in range(len(Packages)):
+            Ax = (69.4/bg_removed.shape[1]) * abs((bg_removed.shape[1]/2) - Packages[I][0])
+            Ay = (42.5/bg_removed.shape[0]) * abs((bg_removed.shape[0]/2) - Packages[I][1])
+            Tx = math.tan(np.deg2rad(Ax)) * dist
+            Ty = math.tan(np.deg2rad(Ay)) * dist
+            if ((bg_removed.shape[1]/2) - Packages[I][0]) < 0:
+                Tx = -Tx
+            if ((bg_removed.shape[0]/2) - Packages[I][1]) < 0:
+                Ty = -Ty
+            Coordinates.append([Tx,Ty])
+        # print('wait')
+        # print(Coordinates)
             
   
         depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
@@ -240,7 +263,7 @@ try:
         # cv2.namedWindow('IR_RealSense', cv2.WINDOW_AUTOSIZE)
         #cv2.namedWindow('Align Example', cv2.WINDOW_NORMAL)
         cv2.imshow('RGB_RealSense', bg_removed)
-        # cv2.imshow('Depth_RealSense', depth_colormap)
+        cv2.imshow('Depth_RealSense', depth_colormap)
         # # cv2.imshow('IR_RealSense', ir1_image)
         # #cv2.imshow('Align Example', images)
         # cv2.imshow("gray", imgGray)
@@ -250,11 +273,7 @@ try:
         # # cv2.imshow("threshold", imgThre)
         
         key = cv2.waitKey(1)
-        # if (cx==0 & cy==0):
-        #     print("noodplan")
-        #     cx=320 
-        #     cy=240
-        #     dist = depth_frame.get_distance(320, 240)
+
         # else:
         #   print(i)
         # dist = depth_frame.get_distance(60, 140)
