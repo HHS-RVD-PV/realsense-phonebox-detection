@@ -25,9 +25,8 @@ config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
 config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 # config.enable_stream(rs.stream.infrared, 640, 480, rs.format.y8, 15)
 size = []
-##uncomment for recording
-# rs.config.enable_device_from_file(config, "/home/wouter/Downloads/object_detection1.bag")
-
+'uncomment for recording' 
+rs.config.enable_device_from_file(config, "/home/wouter/Downloads/object_detection1.bag")
 cfg = pipeline.start(config)
 dev = cfg.get_device()
 
@@ -35,11 +34,11 @@ colorizer = rs.colorizer()
 colorizer.set_option(rs.option.color_scheme, 0) #0 0-9
 
 depth_sensor = dev.first_depth_sensor()
-depth_sensor.set_option(rs.option.visual_preset, 2)#2 0-5
+# depth_sensor.set_option(rs.option.visual_preset, 2)#2 0-5
 emitter = depth_sensor.get_option(rs.option.emitter_enabled)
 print("emitter = ", emitter)
 set_emitter = 1
-depth_sensor.set_option(rs.option.emitter_enabled, set_emitter)
+# depth_sensor.set_option(rs.option.emitter_enabled, set_emitter)
 emitter1 = depth_sensor.get_option(rs.option.emitter_enabled)
 print("new emitter = ", emitter1)
 # Getting the depth sensor's depth scale (see rs-align example for explanation)
@@ -55,8 +54,8 @@ cv2.namedWindow("canny",cv2.WINDOW_AUTOSIZE)
 cv2.namedWindow('RGB_RealSense', cv2.WINDOW_AUTOSIZE)
 cv2.createTrackbar("lower", "canny", 50, 1000, nothing)
 cv2.createTrackbar("upper", "canny", 250, 1000, nothing)
-#cv2.createTrackbar("blur", "canny", 5, 1000, nothing)
-cv2.createTrackbar("brightness", "RGB_RealSense", 800, 1000, nothing)
+cv2.createTrackbar("blur", "canny", 5, 1000, nothing)
+cv2.createTrackbar("brightness", "RGB_RealSense", 731, 1000, nothing)
 
 #eta = 0
 try:
@@ -117,41 +116,7 @@ try:
         kernel = np.ones((5,5))
         imgDial = cv2.dilate(imgCanny,kernel,iterations=1)
         # imgThre = cv2.erode(imgDial,kernel,iterations=2)
-        
-        #contouren zoeken
-        # _, contours, hiearchy = cv2.findContours(imgThre,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
-        # for contour in contours: 
-        #     opp = cv2.contourArea(contour) #oppervlakte pixels
-        #     approx = cv2.approxPolyDP(contour, 0.01* cv2.arcLength(contour, True), True) #voor niet perfecte rechhoek correctie
-        #     lengte = len(approx) #aantal lijnen voor gesloten contour
-        #     #print(lengte)
-        #     #print("Opp:", opp)
-  
-        #     if opp < 200000  and opp > 10000 and lengte == 4:
-        #         M = cv2.moments(contour) # met momenten het middelpunt bepalen
-        #         cx = int(M["m10"] / M["m00"])
-        #         cy = int(M["m01"] / M["m00"])
-        #         cv2.circle(color_image, (cx,cy), (5), (99, 115, 0),5) #tekenen middelpunt
-        #         cv2.drawContours(color_image, [approx], 0, (99, 115, 0), 2) #tekenen contouren van bijbehorende punten
-        #        # print("Opp:", opp)
-        #         #print("Middelpunt:",(cx,cy))
-        #         while a < lengte: #hoekpunten tekenen
-        #             cv2.circle(color_image, ((approx[a][0][0]),(approx[a][0][1])), (5), (99, 115, 0),5)
-        #             a = a + 1;
-        
-        # lines= cv2.HoughLines(imgCanny, 1, np.pi/180.0, 120, np.array([]))
-        # for line in lines:
-        #     rho, theta = line[0]
-        #     a = np.cos(theta)
-        #     b = np.sin(theta)
-        #     x0 = a*rho
-        #     y0 = b*rho
-        #     x1 = int(x0 + 1000*(-b))
-        #     y1 = int(y0 + 1000*(a))
-        #     x2 = int(x0 - 1000*(-b))
-        #     y2 = int(y0 - 1000*(a))
-   
-        #     cv2.line(bg_removed,(x1,y1),(x2,y2),(0,0,255),2)
+
         Hlines=[]
         Vlines=[]
         for T in range(10):
@@ -194,6 +159,7 @@ try:
                     ResetX = 0
                     break
         # print(ResultX)
+         ##if np.median(MedianX) > ResultX[-1] + 50:
         
         
         while (len(Vlines) >= 60) and (ResetY != 2):          # 3 = aantal keer dat de eigenschap terugkomt
@@ -216,8 +182,10 @@ try:
                     ResetY = 0
                     break
 
-        
-        PackCoordX = np.zeros((len(ResultX)-1))
+        if len(ResultX) > 0:
+            PackCoordX = np.zeros((len(ResultX)-1))
+        else:
+            PackCoordX = np.zeros(0)
         PackCoordY = np.zeros((len(ResultY)-1))
         
         
@@ -253,8 +221,8 @@ try:
             if ((bg_removed.shape[0]/2) - Packages[I][1]) < 0:
                 Ty = -Ty
             Coordinates.append([Tx,Ty])
-        # print('wait')
-        # print(Coordinates)
+        print('wait')
+        print(Coordinates)
             
   
         depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
@@ -267,12 +235,12 @@ try:
         cv2.imshow('RGB_RealSense', bg_removed)
         cv2.imshow('Depth_RealSense', depth_colormap)
         # # cv2.imshow('IR_RealSense', ir1_image)
-        # #cv2.imshow('Align Example', images)
-        # cv2.imshow("gray", imgGray)
-        # cv2.imshow("blur", imgBlur)
-        # cv2.imshow("canny", imgCanny)
-        # cv2.imshow("dialation", imgDial)
-        # # cv2.imshow("threshold", imgThre)
+        #cv2.imshow('Align Example', images)
+        cv2.imshow("gray", imgGray)
+        cv2.imshow("blur", imgBlur)
+        cv2.imshow("canny", imgCanny)
+        cv2.imshow("dialation", imgDial)
+        # cv2.imshow("threshold", imgThre)
         
         key = cv2.waitKey(1)
 

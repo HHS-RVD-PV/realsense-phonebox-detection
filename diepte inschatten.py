@@ -56,7 +56,7 @@ try:
           
           imgGray = cv2.cvtColor(color_image,cv2.COLOR_BGR2GRAY)
           imgBlur = cv2.GaussianBlur(imgGray,(9,9),0)
-          imgCanny = cv2.Canny(imgBlur,50,100)
+          imgCanny = cv2.Canny(imgBlur,5,18)
           kernel = np.ones((5,5))
           imgDial = cv2.dilate(imgCanny,kernel,iterations=3)
           imgThre = cv2.erode(imgDial,kernel,iterations=2)
@@ -81,7 +81,10 @@ try:
                   while a < lengte: #hoekpunten tekenen
                       cv2.circle(color_image, ((approx[a][0][0]),(approx[a][0][1])), (5), (99, 115, 0),5)
                       a = a + 1;
-            
+          cx = 350
+          cy = 240
+          cv2.circle(color_image,(cx,cy),2,(0,255,0),2)    
+          cv2.circle(depth_image,(cx,cy),2,(0,255,0),2)     
           cv2.namedWindow('RGB_RealSense', cv2.WINDOW_AUTOSIZE)
           cv2.namedWindow('Depth_RealSense', cv2.WINDOW_AUTOSIZE)
           cv2.namedWindow('IR_RealSense', cv2.WINDOW_AUTOSIZE)
@@ -99,9 +102,11 @@ try:
           key = cv2.waitKey(1)
           if (cx==0 & cy==0):
               print("noodplan")
-              cx=320 
-              cy=240
-              dist = depth_frame.get_distance(320, 240)
+              # cx=320 
+              # cy=240
+              # cx = 150
+              # cy = 240
+              dist = depth_frame.get_distance(cx, cy)
           else:
               
             print(i)

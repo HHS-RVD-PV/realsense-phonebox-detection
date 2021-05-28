@@ -21,7 +21,7 @@ cy= 0
 config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
 config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 # config.enable_stream(rs.stream.infrared, 640, 480, rs.format.y8, 15)
-rs.config.enable_device_from_file(config, "/home/wouter/Downloads/object_detection1.bag")
+
 cfg = pipeline.start(config)
 dev = cfg.get_device()
 
@@ -29,11 +29,11 @@ colorizer = rs.colorizer()
 colorizer.set_option(rs.option.color_scheme, 0) #0 0-9
 
 depth_sensor = dev.first_depth_sensor()
-# depth_sensor.set_option(rs.option.visual_preset, 2)#2 0-5
+depth_sensor.set_option(rs.option.visual_preset, 2)#2 0-5
 emitter = depth_sensor.get_option(rs.option.emitter_enabled)
 print("emitter = ", emitter)
 set_emitter = 1
-# depth_sensor.set_option(rs.option.emitter_enabled, set_emitter)
+depth_sensor.set_option(rs.option.emitter_enabled, set_emitter)
 emitter1 = depth_sensor.get_option(rs.option.emitter_enabled)
 print("new emitter = ", emitter1)
 # Getting the depth sensor's depth scale (see rs-align example for explanation)
@@ -134,22 +134,53 @@ try:
  
           #     cv2.line(bg_removed,(x1,y1),(x2,y2),(0,0,255),2)
          
-          lines= cv2.HoughLinesP(image = imgDial, rho = 1, theta=np.pi/180.0, threshold =100, lines=np.array([]),minLineLength=100, maxLineGap=10)
-          for line in lines:
-              # x1,y1,x2,y2 = line[0]
+          # lines= cv2.HoughLinesP(image = imgDial, rho = 1, theta=np.pi/180.0, threshold =100, lines=np.array([]),minLineLength=100, maxLineGap=10)
+          # for line in lines:
+          #     # x1,y1,x2,y2 = line[0]
  
-              # cv2.line(bg_removed,(x1,y1),(x2,y2),(0,0,255),2)
-              a,b,c = lines.shape
-              for i in range(a):
-                  cv2.line(bg_removed, (lines[i][0][0], lines[i][0][1]), (lines[i][0][2], lines[i][0][3]), (0, 0, 255), 1, cv2.LINE_AA)
+          #     # cv2.line(bg_removed,(x1,y1),(x2,y2),(0,0,255),2)
+          #     a,b,c = lines.shape
+          #     for i in range(a):
+          #         cv2.line(bg_removed, (lines[i][0][0], lines[i][0][1]), (lines[i][0][2], lines[i][0][3]), (0, 0, 255), 1, cv2.LINE_AA)
           
-          depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
+          # depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
+          # cv2.circle(bg_removed,(40,240),2,(0,255,0),2)    
+          # cv2.circle(depth_colormap,(40,240),2,(0,255,0),2)    
+          
+          def cornerHarris_demo(val):
+            global dst_norm_scaled
+            thresh = val
+            # Detector parameters
+            blockSize = 2
+            apertureSize = 3
+            k = 0.04
+            # Detecting corners
+            dst = cv2.cornerHarris(imgGray, blockSize, apertureSize, k)
+            # Normalizing
+            dst_norm = np.empty(dst.shape, dtype=np.float32)
+            cv.normalize(dst, dst_norm, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+            dst_norm_scaled = cv2.convertScaleAbs(dst_norm)
+            # Drawing a circle around corners
+            for i in range(dst_norm.shape[0]):
+                for j in range(dst_norm.shape[1]):
+                    if int(dst_norm[i,j]) > thresh:
+                        cv2.circle(dst_norm_scaled, (j,i), 5, (0), 2)
+                        
+            cv2.namedWindow(imgGray)
+            cv2.imshow(imgGray, dst_norm_scaled)
+
+          
+          thresh = 200 # initial threshold
+          max_thresh = 255
+          cv2.createTrackbar('Threshold: ', imgGray, thresh, max_thresh, cornerHarris_demo)
+          cornerHarris_demo(thresh)
+
 
           cv2.namedWindow('Depth_RealSense', cv2.WINDOW_AUTOSIZE)
           # cv2.namedWindow('IR_RealSense', cv2.WINDOW_AUTOSIZE)
           #cv2.namedWindow('Align Example', cv2.WINDOW_NORMAL)
-          cv2.imshow('RGB_RealSense', bg_removed)
-          cv2.imshow('Depth_RealSense', depth_colormap)
+          # cv2.imshow('RGB_RealSense', bg_removed)
+          # cv2.imshow('Depth_RealSense', depth_colormap)
           # cv2.imshow('IR_RealSense', ir1_image)
           #cv2.imshow('Align Example', images)
           cv2.imshow("gray", imgGray)
@@ -157,20 +188,20 @@ try:
           cv2.imshow("canny", imgCanny)
           cv2.imshow("dialation", imgDial)
           # cv2.imshow("threshold", imgThre)
+          cv2.imshow("corners",imgGray)
           
           key = cv2.waitKey(1)
-          if (cx==0 & cy==0):
-               print("noodplan")
-               cx=320 
-               cy=240
-               dist = depth_frame.get_distance(320, 240)
+          # if (cx==0 & cy==0):
+          #     print("noodplan")
+          #     cx=320 
+          #     cy=240
+          #     dist = depth_frame.get_distance(320, 240)
           # else:
-              
           #   print(i)
-          #   dist = depth_frame.get_distance(cx, cy)
-          #   distmm = dist*100
-          #   print(distmm, 'cm')
-          #   print("Middelpunt:",(cx,cy))
+          dist = depth_frame.get_distance(60, 140)
+          distmm = dist*100
+          print(distmm, 'cm')
+          print("Middelpunt:",(60,140))
           #  # time.sleep(0.5)
           #   i = i+1
                 
@@ -184,4 +215,3 @@ try:
 finally:
 
          pipeline.stop()
-
