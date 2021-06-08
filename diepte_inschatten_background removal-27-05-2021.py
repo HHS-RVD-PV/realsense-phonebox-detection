@@ -26,7 +26,7 @@ config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 # config.enable_stream(rs.stream.infrared, 640, 480, rs.format.y8, 15)
 size = []
 'uncomment for recording' 
-rs.config.enable_device_from_file(config, "/home/wouter/Downloads/object_detection1.bag")
+# rs.config.enable_device_from_file(config, "/home/wouter/Downloads/object_detection1.bag")
 cfg = pipeline.start(config)
 dev = cfg.get_device()
 
@@ -45,7 +45,7 @@ print("new emitter = ", emitter1)
 
 depth_scale = depth_sensor.get_depth_scale()
 print("Depth Scale is: " , depth_scale)
-clipping_distance_in_meters = 0.8 #1 meter
+clipping_distance_in_meters = 1.0 #1 meter
 clipping_distance = clipping_distance_in_meters / depth_scale
 
 align_to = rs.stream.color
@@ -55,7 +55,7 @@ cv2.namedWindow('RGB_RealSense', cv2.WINDOW_AUTOSIZE)
 cv2.createTrackbar("lower", "canny", 50, 1000, nothing)
 cv2.createTrackbar("upper", "canny", 250, 1000, nothing)
 cv2.createTrackbar("blur", "canny", 5, 1000, nothing)
-cv2.createTrackbar("brightness", "RGB_RealSense", 731, 1000, nothing)
+cv2.createTrackbar("brightness", "RGB_RealSense", 800, 1000, nothing)
 
 #eta = 0
 try:
@@ -226,8 +226,8 @@ try:
             
   
         depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
-        #cv2.circle(bg_removed,(40,240),2,(0,255,0),2)    
-        #cv2.circle(depth_colormap,(40,240),2,(0,255,0),2)    
+        cv2.circle(bg_removed,(cx,cy),2,(0,255,0),2)    
+        cv2.circle(depth_colormap,(cx,cy),2,(0,255,0),2)    
   
         cv2.namedWindow('Depth_RealSense', cv2.WINDOW_AUTOSIZE)
         # cv2.namedWindow('IR_RealSense', cv2.WINDOW_AUTOSIZE)
@@ -246,9 +246,9 @@ try:
 
         # else:
         #   print(i)
-        # dist = depth_frame.get_distance(60, 140)
-        # distmm = dist*100
-        # print(distmm, 'cm')
+        dist = depth_frame.get_distance(cx, cy)
+        distmm = dist*100
+        print(distmm, 'cm')
         # print("Middelpunt:",(60,140))
         #  # time.sleep(0.5)
         #   i = i+1

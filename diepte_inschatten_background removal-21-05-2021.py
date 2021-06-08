@@ -25,8 +25,6 @@ config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
 config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 # config.enable_stream(rs.stream.infrared, 640, 480, rs.format.y8, 15)
 size = []
-##uncomment for recording
-# rs.config.enable_device_from_file(config, "/home/wouter/Downloads/object_detection1.bag")
 
 cfg = pipeline.start(config)
 dev = cfg.get_device()
